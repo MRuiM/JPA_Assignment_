@@ -15,10 +15,9 @@ import java.util.Properties;
 public class MyJPADemo {
     private DataSource getDataSource() {
         final MysqlDataSource dataSource = new MysqlDataSource();
-//        dataSource.setDatabaseName("OrmDemo");
         dataSource.setUser("root");
         dataSource.setPassword("123456");
-        dataSource.setUrl("jdbc:postgresql://localhost:3306/store");
+        dataSource.setUrl("jdbc:mysql://localhost:3306/store");
         return dataSource;
     }
 
@@ -26,7 +25,6 @@ public class MyJPADemo {
         final Properties properties = new Properties();
         properties.put( "hibernate.dialect", "org.hibernate.dialect.MySQL8Dialect" );
         properties.put( "hibernate.connection.driver_class", "com.mysql.jdbc.Driver" );
-//        properties.put("hibernate.show_sql", "true");
         return properties;
     }
 
@@ -52,18 +50,50 @@ public class MyJPADemo {
         EntityManager em = entityManagerFactory.createEntityManager();
         PersistenceUnitUtil unitUtil = entityManagerFactory.getPersistenceUnitUtil();
 
+        insertToColor(em); //insert a new color "green"
+        insertToProduct(em); //insert a new product "shoes"
+
+        getColorById(em, 2); //get the color "green" by id
+
+        addToJunctionTable1(em); // create new color and product, add to the junction table.
+
+       withoutOrphanRemove(em, 4, 4);
+
+
+
+
+
+
+
+
+
     }
     private static void insertToColor(EntityManager em) {
         EntityTransaction tx = em.getTransaction();
         tx.begin();
         Color c = new Color();
-        c.setName("Blue");
-        c.setId("7");
+        c.setName("green");
+//        c.setId("7");
 //        em.merge(c);
         em.persist(c);
         tx.commit();
     }
 
+    private static void insertToProduct(EntityManager em) {
+        EntityTransaction tx = em.getTransaction();
+        tx.begin();
+        Product p = new Product();
+        p.setName("shoes");
+        em.persist(p);
+        tx.commit();
+    }
+
+    private static void getColorById(EntityManager em, int id) {
+        Query query = em.createQuery("select c from Color c left join fetch c.product_colors ps where c.id = ?1");
+        query.setParameter(1, ""+id);
+        Color c = (Color)query.getSingleResult();
+        System.out.println(c);
+    }
     private static void getProductById(EntityManager em) {
         Query query = em.createQuery("select p from Product p left join fetch p.product_colors ts where p.id = ?1");
         query.setParameter(1, "17");
@@ -90,6 +120,21 @@ public class MyJPADemo {
         tx.commit();
     }
 
-
+    private static void withoutOrphanRemove(EntityManager em, int p_id, int c_id) {
+        EntityTransaction tx = em.getTransaction();
+        tx.begin();
+        Query query = em.createQuery("select p from Product p join fetch p.product_colors pc where p.id = ?1");
+        query.setParameter(1, "" + p_id);
+        Product p = (Product) query.getSingleResult();
+        Iterator<Product_Color> itr = p.getProduct_color().iterator();
+        while(itr.hasNext()) {
+            Product_Color ts = itr.next();
+            if(ts.getCol().getId().equals(""+c_id)) {
+                itr.remove();
+                em.remove(ts);
+            }
+        }
+        tx.commit();
+    }
 }
 

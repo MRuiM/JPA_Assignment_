@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-@Table(name = "colors")
+@Table(name = "products")
 @Entity
 @Data
 @NoArgsConstructor
